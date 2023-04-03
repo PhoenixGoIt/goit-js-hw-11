@@ -6,7 +6,7 @@ export class pixabayApi {
   constructor() {
     this.baseUrl = 'https://pixabay.com/api/';
     this.apiKey = '24796012-24b5258be9d2a1f3ae4215f6c';
-    this.perPage = 12;
+    this.perPage = 40;
     this.page = 1
     this.refs = new getRefs();
   }

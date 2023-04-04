@@ -1,6 +1,5 @@
 import { pixabayApi } from "./js/pixabay-api.js";
 import Notiflix from 'notiflix';
-import axios from "axios";
 import getRefs from "./js/refs.js";
 
 const Pixabay = new pixabayApi();
@@ -11,14 +10,16 @@ refs.loadMoreBtn.addEventListener('click', loadMore);
 refs.input.addEventListener('input', inputForm);
 
 let inputValue = null;
-
+refs.searchBtn.disabled = true
 function inputForm(e) {
+    refs.searchBtn.disabled = false
   inputValue = e.target.value.trim();
 
   if (!inputValue) {
     resetMarkup(refs.gallery);
     Notiflix.Notify.info('Gallery cleared!');
     refs.loadMoreBtn.classList.add('hidden');
+    refs.searchBtn.disabled = true
     return;
   }
 }
@@ -26,7 +27,7 @@ function inputForm(e) {
 async function loadMore(e) {
   try {
     const data = await Pixabay.search(inputValue);
-    renderImg(data);
+    renderImg(data.hits);
   } catch (error) {
     console.error(error);
     Notiflix.Notify.failure('Sorry, something went wrong!');
@@ -39,15 +40,30 @@ async function submitForm(e) {
   resetMarkup(refs.gallery);
   try {
     const data = await Pixabay.search(inputValue);
-    renderImg(data);
+    if (data.totalHits !== 0) {
+      Notiflix.Notify.success(`Hooray! We found ${data.totalHits} images.`)
+    }
+    if (data.totalHits === 0){
+      Notiflix.Notify.failure(`We found ${data.totalHits} images.`)
+      hiddenBtn()
+      resetMarkup(refs.gallery)
+      throw new Error ('Sorry, there are no images matching your search query. Please try again.')
+  }
+  if (data.totalHits <= 12) {
+    hiddenBtn()
+  }
+    renderImg(data.hits);
   } catch (error) {
     console.error(error);
-    Notiflix.Notify.failure('Sorry, something went wrong!');
-  }
+}
+function hiddenBtn() {
+  refs.loadMoreBtn.classList.add('hidden')
 }
 
+}
 function renderImg(data) {
-  const markup = data.map(({ likes, views, comments, downloads, webformatURL }) => {
+  if (data !== undefined) {
+    const markup = data.map(({ likes, views, comments, downloads, webformatURL }) => {
       return `<div class="photo-card">
         <img src="${webformatURL}" alt="" loading="lazy" width="420" height="300"/>
         <ul class="info">
@@ -73,6 +89,7 @@ function renderImg(data) {
     .join('');
 
   refs.gallery.insertAdjacentHTML('beforeend', markup);
+  }
 }
 
 function resetMarkup(el) {
